@@ -10,7 +10,9 @@
 #include <pipewire/filter.h>
 
 #define NUM_SAMPLES  1024
-#define ORDER 5
+#define ORDER 7
+
+static float b[ORDER]  = {-0.000, 0.052, 0.250, 0.397, 0.250, 0.052, -0.000};
 
 
 struct data;
@@ -34,6 +36,8 @@ static void on_process(void *userdata, struct spa_io_position *position)
         
         static float l_buffer[NUM_SAMPLES + ORDER] =  {0};
         static float r_buffer[NUM_SAMPLES + ORDER] =  {0};
+        static float past_out_r[ORDER] = {0};
+        static float past_out_l[ORDER] = {0};
 
         struct data *data = userdata;
         float *in_l, *in_r, *out_l, *out_r;
@@ -59,9 +63,8 @@ static void on_process(void *userdata, struct spa_io_position *position)
         memcpy(&r_buffer[ORDER], in_r, n_samples * sizeof(float)); 
 
         for(uint32_t i = ORDER; i < n_samples + ORDER; i++){
-                out_l[i-ORDER] = l_buffer[i];
-                out_r[i-ORDER] =  r_buffer[i];
-
+                out_l[i-ORDER] = l_buffer[i] * b[0] + l_buffer[i-1] * b[1] + l_buffer[i-2] * b[2] + l_buffer[i-3] * b[3] * l_buffer[i-4] * b[4] + l_buffer[5] * b[5] + l_buffer[6] * b[6];
+                out_r[i-ORDER] = r_buffer[i] * b[0] + r_buffer[i-1] * b[1] + r_buffer[i-2] * b[2] + r_buffer[i-3] * b[3] * r_buffer[i-4] * b[4] + r_buffer[5] * b[5] + l_buffer[6] * b[6];
                 // fprintf(stdout, "Output sample value left: %.02f\n", out_l[i-ORDER]);
                 // fprintf(stdout, "Output sample value left: %.02f\n", out_r[i-ORDER]);
 
