@@ -39,11 +39,9 @@ static void on_process(void *userdata, struct spa_io_position *position)
         float *in_l, *in_r, *out_l, *out_r;
         uint32_t n_samples = position->clock.duration;
 
-        fprintf(stdout, "Num samples %d \n", n_samples);
+        // fprintf(stdout, "Num samples %d \n", n_samples);
 
-        // double f_s = (double)position->clock.rate.denom / position->clock.rate.num;
         pw_log_trace("do process %d", n_samples);
-
 
         in_l = pw_filter_get_dsp_buffer(data->in_port_l, n_samples);
         in_r = pw_filter_get_dsp_buffer(data->in_port_r, n_samples);
@@ -53,7 +51,7 @@ static void on_process(void *userdata, struct spa_io_position *position)
 
         
         if (in_l == NULL || out_l == NULL || in_r == NULL || out_r == NULL){// Can often return null pointers
-                fprintf(stdout, "Null stream buffer \n");
+                // fprintf(stdout, "Null stream buffer \n");
                 return;
         }
 
@@ -64,13 +62,13 @@ static void on_process(void *userdata, struct spa_io_position *position)
                 out_l[i-ORDER] = l_buffer[i];
                 out_r[i-ORDER] =  r_buffer[i];
 
-                fprintf(stdout, "Output sample value left: %.02f\n", out_l[i-ORDER]);
-                fprintf(stdout, "Output sample value left: %.02f\n", out_r[i-ORDER]);
+                // fprintf(stdout, "Output sample value left: %.02f\n", out_l[i-ORDER]);
+                // fprintf(stdout, "Output sample value left: %.02f\n", out_r[i-ORDER]);
 
         }
 
        memcpy(&l_buffer[0], &l_buffer[n_samples], ORDER * sizeof(float)); //store needed values for next chunk for continuous filtering
-       memcpy(&l_buffer[0], &l_buffer[n_samples], ORDER * sizeof(float)); //inefficent
+       memcpy(&r_buffer[0], &r_buffer[n_samples], ORDER * sizeof(float)); //inefficent
 
 }
 /* [on_process] */
@@ -151,7 +149,7 @@ int main(int argc, char *argv[])
                         sizeof(struct port),
                         pw_properties_new(
                                 PW_KEY_FORMAT_DSP, "32 bit float mono audio",
-                                PW_KEY_PORT_NAME, "output_r",
+                                PW_KEY_PORT_NAME, "output_l",
                                 NULL),
                         NULL, 0);
 
