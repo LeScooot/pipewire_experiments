@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <math.h>
 #include <signal.h>
+#include <string.h>
 
 #include <spa/pod/builder.h>
 #include <spa/param/latency-utils.h>
@@ -43,7 +44,6 @@ static void on_process(void *userdata, struct spa_io_position *position)
         float *in_l, *in_r, *out_l, *out_r;
         uint32_t n_samples = position->clock.duration;
 
-        // fprintf(stdout, "Num samples %d \n", n_samples);
 
         pw_log_trace("do process %d", n_samples);
 
@@ -52,10 +52,8 @@ static void on_process(void *userdata, struct spa_io_position *position)
         out_l = pw_filter_get_dsp_buffer(data->out_port_l, n_samples);
         out_r = pw_filter_get_dsp_buffer(data->out_port_r, n_samples);
 
-
         
         if (in_l == NULL || out_l == NULL || in_r == NULL || out_r == NULL){// Can often return null pointers
-                // fprintf(stdout, "Null stream buffer \n");
                 return;
         }
 
@@ -63,15 +61,13 @@ static void on_process(void *userdata, struct spa_io_position *position)
         memcpy(&r_buffer[ORDER], in_r, n_samples * sizeof(float)); 
 
         for(uint32_t i = ORDER; i < n_samples + ORDER; i++){
-                out_l[i-ORDER] = l_buffer[i] * b[0] + l_buffer[i-1] * b[1] + l_buffer[i-2] * b[2] + l_buffer[i-3] * b[3] * l_buffer[i-4] * b[4] + l_buffer[5] * b[5] + l_buffer[6] * b[6];
-                out_r[i-ORDER] = r_buffer[i] * b[0] + r_buffer[i-1] * b[1] + r_buffer[i-2] * b[2] + r_buffer[i-3] * b[3] * r_buffer[i-4] * b[4] + r_buffer[5] * b[5] + l_buffer[6] * b[6];
-                // fprintf(stdout, "Output sample value left: %.02f\n", out_l[i-ORDER]);
-                // fprintf(stdout, "Output sample value left: %.02f\n", out_r[i-ORDER]);
+                out_l[i-ORDER] = l_buffer[i] * b[0] + l_buffer[i-1] * b[1] + l_buffer[i-2] * b[2] + l_buffer[i-3] * b[3] + l_buffer[i-4] * b[4] + l_buffer[i-5] * b[5] + l_buffer[i-6] * b[6];
+                out_r[i-ORDER] = r_buffer[i] * b[0] + r_buffer[i-1] * b[1] + r_buffer[i-2] * b[2] + r_buffer[i-3] * b[3] + r_buffer[i-4] * b[4] + r_buffer[i-5] * b[5] + r_buffer[i-6] * b[6];
 
         }
 
-       memcpy(&l_buffer[0], &l_buffer[n_samples], ORDER * sizeof(float)); //store needed values for next chunk for continuous filtering
-       memcpy(&r_buffer[0], &r_buffer[n_samples], ORDER * sizeof(float)); //inefficent
+       memcpy(&l_buffer[0], &l_buffer[n_samples], ORDER * sizeof(float)); //
+        memcpy(&r_buffer[0], &r_buffer[n_samples], ORDER * sizeof(float)); //inefficent
 
 }
 /* [on_process] */
