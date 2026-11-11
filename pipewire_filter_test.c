@@ -13,7 +13,15 @@
 #define NUM_SAMPLES  1024
 #define ORDER 7
 
-static float b[ORDER]  = {-0.000, 0.052, 0.250, 0.397, 0.250, 0.052, -0.000};
+static float b[ORDER/2][ORDER]  = {{0.00152573, 0.00305145, 0.00152573},
+{1.00000000, 2.00000000, 1.00000000},
+{1.00000000, 1.00000000, 0.00000000},
+};
+
+static float a[ORDER/2][ORDER]  = {{1.00000000, -0.49314543, 0.00000000},
+{1.00000000, -1.06312124, 0.34003499},
+{1.00000000, -1.33547945, 0.68333501}
+};
 
 
 struct data;
@@ -37,13 +45,17 @@ static void on_process(void *userdata, struct spa_io_position *position)
         
         static float l_buffer[NUM_SAMPLES + ORDER] =  {0};
         static float r_buffer[NUM_SAMPLES + ORDER] =  {0};
-        static float past_out_r[ORDER] = {0};
-        static float past_out_l[ORDER] = {0};
+        static float memory_in_l[ORDER/2][2] = {0};
+        static float memory_in_r[ORDER/2][2] = {0};
+        static float memory_out_l[ORDER/2][2] = {0};
+        static float memory_out_r[ORDER/2][2] = {0};
+
+
+
 
         struct data *data = userdata;
         float *in_l, *in_r, *out_l, *out_r;
         uint32_t n_samples = position->clock.duration;
-
 
         pw_log_trace("do process %d", n_samples);
 
@@ -51,25 +63,32 @@ static void on_process(void *userdata, struct spa_io_position *position)
         in_r = pw_filter_get_dsp_buffer(data->in_port_r, n_samples);
         out_l = pw_filter_get_dsp_buffer(data->out_port_l, n_samples);
         out_r = pw_filter_get_dsp_buffer(data->out_port_r, n_samples);
-
         
-        if (in_l == NULL || out_l == NULL || in_r == NULL || out_r == NULL){// Can often return null pointers
+        if (in_l == NULL || out_l == NULL || in_r == NULL || out_r == NULL){ // Can often return null pointers
+                                                                             //
                 return;
+
         }
 
         memcpy(&l_buffer[ORDER], in_l, n_samples * sizeof(float)); 
         memcpy(&r_buffer[ORDER], in_r, n_samples * sizeof(float)); 
 
-        for(uint32_t i = ORDER; i < n_samples + ORDER; i++){
-                out_l[i-ORDER] = l_buffer[i] * b[0] + l_buffer[i-1] * b[1] + l_buffer[i-2] * b[2] + l_buffer[i-3] * b[3] + l_buffer[i-4] * b[4] + l_buffer[i-5] * b[5] + l_buffer[i-6] * b[6];
-                out_r[i-ORDER] = r_buffer[i] * b[0] + r_buffer[i-1] * b[1] + r_buffer[i-2] * b[2] + r_buffer[i-3] * b[3] + r_buffer[i-4] * b[4] + r_buffer[i-5] * b[5] + r_buffer[i-6] * b[6];
 
+        //need memory buffer for each stage... only two elements each however...
+        for(int stage = 0; stage < ORDER/2; stage++){
+
+                for(uint32_t i = ORDER; i < n_samples + ORDER; i++){
+                out_l[i-ORDER] = l_buffer[i] * b[stage][0] + l_buffer[i-1] * b[stage][0]1] + l_buffer[i-2] * b[stage][0]2] + l_buffer[i-3] * b[stage][0]3] + l_buffer[i-4] * b[stage][0]4] + l_buffer[i-5] * b[stage][0]5] + l_buffer[i-6] * b[stage][0]6];
+                out_r[i-ORDER] = r_buffer[i] * b[stage][0] + r_buffer[i-1] * b[stage][0]1] + r_buffer[i-2] * b[stage][0]2] + r_buffer[i-3] * b[stage][0]3] + r_buffer[i-4] * b[stage][0]4] + r_buffer[i-5] * b[stage][0]5] + r_buffer[i-6] * b[stage][0]6];
+
+                }
         }
 
-       memcpy(&l_buffer[0], &l_buffer[n_samples], ORDER * sizeof(float)); //
+        memcpy(&l_buffer[0], &l_buffer[n_samples], ORDER * sizeof(float)); //
         memcpy(&r_buffer[0], &r_buffer[n_samples], ORDER * sizeof(float)); //inefficent
 
 }
+
 /* [on_process] */
 
 static const struct pw_filter_events filter_events = {

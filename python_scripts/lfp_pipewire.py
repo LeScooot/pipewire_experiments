@@ -11,7 +11,11 @@ Wn = cutoff/f_s * 2 * np. pi
 
 sos = signal.iirfilter(order, Wn= cutoff, fs=f_s, btype='lowpass', output='sos')
 
-print(f"SOS vector: {sos}")
+for i, section in enumerate(sos):
+    b0, b1, b2, a0, a1, a2 = section
+    print(f"Coefficents for stage {i} ") 
+    print(f"b: [{b0:.8f}, {b1:.8f}, {b2:.8f}]")
+    print(f"a: [{a0:.8f}, {a1:.8f}, {a2:.8f}]\n")
 
 
 w, h = signal.freqz_sos(sos, fs=f_s)
